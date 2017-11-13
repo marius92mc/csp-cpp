@@ -1,0 +1,8 @@
+language: C++
+sudo: required 
+
+script: g++ -o channel -std=c++0x -lpthread src/channel.cpp
+
+notifications:
+    email: false
+
