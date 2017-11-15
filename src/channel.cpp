@@ -48,22 +48,29 @@ public:
      *        This could be used to process items until a channel
      *        is closed and drained.
      * @param
+     *      value
      *        The variable in which it will be put the value from the
      *        channel.
+     *      wait
+     *        Controls whether it blocks until an item is available
+     *        or the channel is closed.
+     *        By default is set to `true` to be blocking.
      * @return
      *        `true`, if an item was received.
      *        `false`, if there was no item to read from the channel, i. e.
      *                 the channel was empty.
      */
-    bool read(T& value) {
+    bool read(T& value, bool wait = true) {
         std::unique_lock<std::mutex> lock(mutex);
 
-        conditionalVariable.wait(
-            lock,
-            [&]() {
-                return closed || (!queue.empty());
-            }
-        );
+        if (wait) {
+            conditionalVariable.wait(
+                lock,
+                [&]() {
+                    return closed || (!queue.empty());
+                }
+            );
+        }
 
         if (queue.empty()) {
             return false;
