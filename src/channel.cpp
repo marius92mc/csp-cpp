@@ -9,24 +9,69 @@ class ChannelUnbounded {
     std::queue<T> queue;
     std::mutex mutex;
     std::condition_variable conditionalVariable;
+    bool closed;
 
 public:
+    ChannelUnbounded() {
+        closed = false;
+    }
+
+    void close() {
+        std::unique_lock<std::mutex> lock(mutex);
+        closed = true;
+        conditionalVariable.notify_all();
+    }
+
+    bool isClosed() {
+        std::unique_lock<std::mutex> lock(mutex);
+        return closed;
+    }
+
+    /**
+     * @brief
+     *        Write a value to a channel.
+     * @param value
+     *        The item that will be added to the channel.
+     */
     void write(const T& value) {
         std::unique_lock<std::mutex> lock(mutex);
+        if (closed) {
+            throw std::logic_error("Cannot write to a closed channel.\n");
+        }
         queue.push(value);
         conditionalVariable.notify_one();
     }
 
-    void read(T& value) {
+    /**
+     * @brief
+     *        Read the first value from a channel.
+     *        This could be used to process items until a channel
+     *        is closed and drained.
+     * @param
+     *        The variable in which it will be put the value from the
+     *        channel.
+     * @return
+     *        `true`, if an item was received.
+     *        `false`, if there was no item to read from the channel, i. e.
+     *                 the channel was empty.
+     */
+    bool read(T& value) {
         std::unique_lock<std::mutex> lock(mutex);
+
         conditionalVariable.wait(
             lock,
             [&]() {
-                return !queue.empty();
+                return closed || (!queue.empty());
             }
         );
+
+        if (queue.empty()) {
+            return false;
+        }
+
         value = queue.front();
         queue.pop();
+        return true;
     }
 };
 
