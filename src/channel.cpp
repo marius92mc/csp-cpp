@@ -84,6 +84,7 @@ public:
 
 
 ChannelUnbounded<std::string> myChannel;
+ChannelUnbounded<std::string> channel1, channel2;
 
 
 class Example {
@@ -92,10 +93,65 @@ class Example {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         myChannel.write("message " + std::to_string(id));
     }
+
+    void process1(const int& id) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        channel1.write("message " + std::to_string(id));
+    }
+
+    void process2(const int& id) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        channel2.write("message " + std::to_string(id));
+    }
 };
 
+/**
+ * @brief
+ * 		  This function shows an example of a Golang `select` simulation
+ * 		  without using operator overloadings, just plain C++ statements.
+ *
+ * 		  The threads creation section is needed because they call the
+ * 		  methods that write on the channels.
+ * 		  The last section is needed because of the threads safely termination.
+ *
+ * 		  The `select` behavior is comprised by the loop.
+ */
+void runSelectExample() {
+    Example example;
+    std::thread thread1(&Example::process1, &example, 1);
+    std::thread thread2(&Example::process2, &example, 2);
+    std::string message1, message2;
+
+    // Simulation of Golang's `select` statement
+    while (true) {
+        if (channel1.read(message1, false)) {
+            std::cout << "Received from channel1.\n";
+            break;
+        } else if (channel2.read(message2, false)) {
+            std::cout << "Received from channel2.\n";
+            break;
+        }
+    }
+
+    if (thread1.joinable()) {
+        thread1.join();
+    }
+    if (thread2.joinable()) {
+        thread2.join();
+    }
+}
 
 int main() {
+    std::string input;
+
+    std::cout << "\n1. Select example. \n"
+                   "2. Without Select. \n";
+    std::cin >> input;
+    if (input == "1") {
+        runSelectExample();
+        return 0;
+    }
+
     Example example;
     std::thread thread1(&Example::process, &example, 1);
     std::thread thread2(&Example::process, &example, 2);
