@@ -88,6 +88,9 @@ public:
 ChannelUnbounded<std::string> myChannel;
 ChannelUnbounded<std::string> channel1, channel2;
 
+// Variable shared by all threads/tasks in order to check if the task was finished.
+int kSharedVariable = 0;
+
 
 class Example {
   public:
@@ -99,11 +102,13 @@ class Example {
     void process1(const int& id) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         channel1.write("message " + std::to_string(id));
+        kSharedVariable = id;
     }
 
     void process2(const int& id) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         channel2.write("message " + std::to_string(id));
+        kSharedVariable = id;
     }
 };
 
@@ -143,14 +148,46 @@ void runSelectExample() {
     }
 }
 
+class TbbExample {
+  public:
+    TbbExample() {
+    }
+    
+    ~TbbExample() {
+    }
+
+    void runTbbExample() {
+        Example example;
+        tbb::task_group taskGroup;
+        while (true) {
+            taskGroup.run(example.process1(1));
+            taskGroup.run(example.process2(2));
+            taskGroup.wait();
+            // kSharedVariable is 0 initially, shared between all tasks
+            if (kSharedVariable != 0) {
+                std::cout << "First task finished was " << id << ". \n";
+                // Kill all other tasks because the first one already received
+                tbb::task::self().cancel_group_execution();
+                break;
+            }
+        }
+    }
+};
+
 int main() {
     std::string input;
 
     std::cout << "\n1. Select example. \n"
-                   "2. Without Select. \n";
+                   "2. Without Select. \n"
+                   "3. With tbb. \n";
     std::cin >> input;
     if (input == "1") {
         runSelectExample();
+        return 0;
+    }
+    if (input == "3") {
+        TbbExample tbbExample;
+        tbbExample.runTbbExample();
         return 0;
     }
 
