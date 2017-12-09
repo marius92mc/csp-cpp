@@ -147,12 +147,12 @@ void runSelectExample() {
         thread2.join();
     }
 }
-
+/*
 class TbbExample {
   public:
     TbbExample() {
     }
-    
+
     ~TbbExample() {
     }
 
@@ -173,7 +173,7 @@ class TbbExample {
         }
     }
 };
-
+*/
 int main() {
     std::string input;
 
@@ -185,11 +185,13 @@ int main() {
         runSelectExample();
         return 0;
     }
+    /*
     if (input == "3") {
         TbbExample tbbExample;
         tbbExample.runTbbExample();
         return 0;
     }
+    */
 
     Example example;
     std::thread thread1(&Example::process, &example, 1);
