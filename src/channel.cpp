@@ -4,6 +4,8 @@
 #include <condition_variable>
 #include <queue>
 
+#include "tbb/include/tbb/tbb.h"
+
 template <class T>
 class ChannelUnbounded {
     std::queue<T> queue;
