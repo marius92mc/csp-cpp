@@ -1,7 +1,7 @@
 language: C++
 sudo: required 
 
-script: g++ -o channel -std=c++0x -lpthread src/channel.cpp
+script: cd src/tbb/; make; cd ../..; g++ -Wall -O2 -I`pwd`/src/tbb/include -o a -std=c++0x -lpthread src/channel.cpp
 
 notifications:
     email: false
