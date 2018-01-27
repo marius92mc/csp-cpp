@@ -85,7 +85,7 @@ void runExampleWithTaskGroup() {
     tg.run(Hello("push", 1, 8));
     tg.run(Hello("push", 2, 10));
     // This pop is hardcoded for the example, but it actually triggers
-    // when the first pop is encountered
+    // when the first pop is encountered.
     tg.run(Hello("pop", 1));
 
     /*
@@ -95,8 +95,15 @@ void runExampleWithTaskGroup() {
      */
     while (true) {
       if (trigger != 0) {
+        // A pop from a queue was encountered, aka
+        // an item from a channel was received,
+        // more precisely from the channel with index `trigger`,
+        // because of the `trigger.fetch_and_add(indexChannel)` call.
         std::cout << "Received item from channel " << trigger << ".\n";
+
+        // When an item is received, cancel all the other channels.
         tg.cancel();
+
         break;
       }
     }
