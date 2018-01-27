@@ -96,6 +96,7 @@ void runExampleWithTaskGroup() {
     while (true) {
       if (trigger != 0) {
         std::cout << "Received item from channel " << trigger << ".\n";
+        tg.cancel();
         break;
       }
     }
