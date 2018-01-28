@@ -93,7 +93,10 @@ void runExampleWithTaskGroup() {
     int x;
     int indexChannel;
 
-    trigger.fetch_and_add(0);
+    // Instead of `trigger.fetch_and_add(0);`, because it will affect when
+    // we have multiple usages, adding 0 will maintain the different value
+    // different of 0.
+    trigger = 0;
 
     gQueues.resize(20); // TODO change this
     task_group tg;
