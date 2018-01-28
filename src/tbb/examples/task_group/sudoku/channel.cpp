@@ -31,6 +31,11 @@ public:
     Hello(
         std::string operation, int indexChannel, int content = 0
     ): kSecondsLimit(5) {
+      if (operation != "push" && operation != "pop") {
+        std::cout << "Not a valid operation.\n";
+        return;
+      }
+
       if (operation == "push") {
         if (!isValidIndex(indexChannel)) {
           std::cout << "Not a valid index.\n";
@@ -38,6 +43,7 @@ public:
         }
         gQueues[indexChannel].push(content);
       }
+
       if (operation == "pop") {
         if (!isValidIndex(indexChannel)) {
           std::cout << "Not a valid index.\n";
@@ -51,10 +57,7 @@ public:
         // Trigger the behavior that a pop was encountered
         trigger.fetch_and_add(indexChannel);
       }
-      if (operation != "push" && operation != "pop") {
-        std::cout << "Not a valid operation.\n";
-        return;
-      }
+
       this->operation = operation;
     }
 
