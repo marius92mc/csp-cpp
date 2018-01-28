@@ -61,15 +61,16 @@ public:
       this->operation = operation;
     }
 
-    bool isValidIndex(int indexChannel) {
-      return (indexChannel >= 0 && indexChannel < gQueues.size());
-    }
-
     void operator()() const {
        std::this_thread::sleep_for(
            std::chrono::seconds(getRandom() % kSecondsLimit)
        );
        std::cout << operation << "\n";
+    }
+
+private:
+    bool isValidIndex(const int& indexChannel) {
+      return (indexChannel >= 0 && indexChannel < gQueues.size());
     }
 };
 
