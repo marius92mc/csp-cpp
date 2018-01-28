@@ -14,13 +14,8 @@
 using namespace tbb;
 
 
-int getRandom() {
-    std::srand(std::time(nullptr));
-    return std::rand();
-}
-
-
 std::vector<std::queue<int> > gQueues;
+const unsigned int gKDefaultnumberOfChannels = 20;
 
 /*
  * Either all threads see the updated value of count at once,
@@ -31,6 +26,12 @@ std::vector<std::queue<int> > gQueues;
  * there's no way count would have different values in different threads.
  */
 atomic<int> trigger;
+
+
+int getRandom() {
+    std::srand(std::time(nullptr));
+    return std::rand();
+}
 
 
 class Hello {
@@ -153,7 +154,7 @@ void showExampleGeneral() {
   setTriggerToDefault();
 
   gQueues.clear();
-  gQueues.resize(20); // TODO change this
+  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
 
   task_group tg;
 
@@ -183,7 +184,7 @@ void showExamplePopFromEmptyChannel() {
   setTriggerToDefault();
 
   gQueues.clear();
-  gQueues.resize(20); // TODO change this
+  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
 
   task_group tg;
 
@@ -217,7 +218,7 @@ void showExampleDefaultCase(const int& numberOfSeconds = 5) {
   setTriggerToDefault();
 
   gQueues.clear();
-  gQueues.resize(20); // TODO change this
+  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
 
   task_group tg;
 
@@ -240,7 +241,7 @@ void showExampleNotAValidChannel() {
   setTriggerToDefault();
 
   gQueues.clear();
-  gQueues.resize(20); // TODO change this
+  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
 
   task_group tg;
 
@@ -250,8 +251,8 @@ void showExampleNotAValidChannel() {
   tg.run(Hello("push", 2, 10));
   tg.run(Hello("push", 3, 5));
 
-  tg.run(Hello("push", 21, 1));
-  tg.run(Hello("pop", 22, 2));
+  tg.run(Hello("push", gKDefaultnumberOfChannels + 1, 1));
+  tg.run(Hello("pop", gKDefaultnumberOfChannels + 2, 2));
 
 
   // We haven't called any pop(), so the default case will be triggered.
