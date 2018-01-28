@@ -44,20 +44,17 @@ public:
         std::cout << "Not a valid operation.\n";
         return;
       }
+      if (!isValidIndex(indexChannel)) {
+        std::cout << "On " << operation
+                  << " not a valid channel: " << indexChannel << ".\n";
+        return;
+      }
 
       if (operation == "push") {
-        if (!isValidIndex(indexChannel)) {
-          std::cout << "Not a valid index.\n";
-          return;
-        }
         gQueues[indexChannel].push(content);
       }
 
       if (operation == "pop") {
-        if (!isValidIndex(indexChannel)) {
-          std::cout << "Not a valid index.\n";
-          return;
-        }
         if (gQueues[indexChannel].size() < 1) {
           std::cout << "Can't pop on empty channel " << indexChannel << ".\n";
           return;
@@ -237,10 +234,39 @@ void showExampleDefaultCase(const int& numberOfSeconds = 5) {
 }
 
 
+void showExampleNotAValidChannel() {
+  std::cout << "\n---------- Example - not a valid channel ----------\n";
+
+  setTriggerToDefault();
+
+  gQueues.clear();
+  gQueues.resize(20); // TODO change this
+
+  task_group tg;
+
+  // queue indices starting with 1, to have effect the fetch_and_add(number)
+  tg.run(Hello("push", 1, 5));
+  tg.run(Hello("push", 1, 8));
+  tg.run(Hello("push", 2, 10));
+  tg.run(Hello("push", 3, 5));
+
+  tg.run(Hello("push", 21, 1));
+  tg.run(Hello("pop", 22, 2));
+
+
+  // We haven't called any pop(), so the default case will be triggered.
+  tg.run(DefaultTimer(5));
+
+  runSelectInstruction(tg);
+}
+
+
+
 void runExampleWithTaskGroup() {
   showExampleGeneral();
   showExamplePopFromEmptyChannel();
   showExampleDefaultCase();
+  showExampleNotAValidChannel();
 }
 
 
