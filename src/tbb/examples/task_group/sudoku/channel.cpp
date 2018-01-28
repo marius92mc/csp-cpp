@@ -21,6 +21,15 @@ int getRandom() {
 
 
 std::vector<std::queue<int> > gQueues;
+
+/*
+ * Either all threads see the updated value of count at once,
+ * or all threads continue to see the old value.
+ * Operations on count are atomic and cannot be interrupted by the
+ * vagaries of process or thread scheduling.
+ * No matter how threads are scheduled,
+ * there's no way count would have different values in different threads.
+ */
 atomic<int> trigger;
 
 
