@@ -45,6 +45,7 @@ public:
         }
         if (gQueues[indexChannel].size() < 1) {
           std::cout << "Can't pop on empty channel " << indexChannel << ".\n";
+          return;
         }
         gQueues[indexChannel].pop();
         // Trigger the behavior that a pop was encountered
@@ -70,6 +71,19 @@ public:
 };
 
 
+class DefaultTimer {
+  int countSeconds;
+public:
+  DefaultTimer(int seconds) {
+    countSeconds = seconds;
+  }
+
+  void operator()() const {
+    std::this_thread::sleep_for(std::chrono::seconds(countSeconds));
+  }
+};
+
+
 void runExampleWithTaskGroup() {
     std::string operation;
     int x;
@@ -87,6 +101,9 @@ void runExampleWithTaskGroup() {
     // This pop is hardcoded for the example, but it actually triggers
     // when the first pop is encountered.
     tg.run(Hello("pop", 1));
+    //tg.run(Hello("pop", 3));
+
+    tg.run(DefaultTimer(5));
 
     /*
      * `select` are.
@@ -103,7 +120,26 @@ void runExampleWithTaskGroup() {
 
         // When an item is received, cancel all the other channels.
         tg.cancel();
+        break;
+      }
 
+      // Handling the `default` case of `select`.
+      // When it finished all the tasks, including the costliest one
+      // represented by the `DefaultTimer()`, we inspect the returned value,
+      // which is from an enum, and the value `1` corresponse to
+      // `complete, // Not cancelled and all tasks in group have completed`,
+      // in which case it means that we have reached the default case, so
+      // we print the message on console and exit from loop.
+      // `task_group` - https://software.intel.com/en-us/node/506287
+      // `enum task_group_status`, as returned value of `wait()` -
+      // 		https://software.intel.com/en-us/node/506289.
+      // enum task_group_status {
+      //     not_complete, // Not cancelled and not all tasks in group have completed.
+      //     complete,     // Not cancelled and all tasks in group have completed
+      //     canceled      // Task group received cancellation request
+      // };
+      if (tg.wait() == 1) {
+        std::cout << "Default case reached.\n";
         break;
       }
     }
