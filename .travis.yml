@@ -1,7 +1,9 @@
 language: C++
 sudo: required 
 
-script: g++ -o channel -std=c++0x -lpthread src/channel.cpp
+script: (cd src/tbb/; make); 
+        cd src/tbb/examples/task_group/sudoku 
+        c++ -std=c++11 -O2 -DNDEBUG -Wl,-rpath,../../../lib -o channel channel.cpp -ltbb
 
 notifications:
     email: false
