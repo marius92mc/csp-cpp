@@ -98,63 +98,67 @@ public:
 
 /*
  * `select` area.
- * We consider the default case of waiting 10 seconds, when this timer
+ * We consider the default case of waiting 5 seconds, when this timer
  * is reached, we cancel the entire task group.
  */
-void runSelectInstruction(task_group& tg) {
-  while (true) {
-    if (trigger != 0) {
-      // A pop from a queue was encountered, aka
-      // an item from a channel was received,
-      // more precisely from the channel with index `trigger`,
-      // because of the `trigger.fetch_and_add(indexChannel)` call.
-      std::cout << "Received item from channel " << trigger << ".\n";
-
-      // When an item is received, cancel all the other channels.
-      tg.cancel();
-      break;
-    }
-
-    // Handling the `default` case of `select`.
-    // When it finished all the tasks, including the costliest one
-    // represented by the `DefaultTimer()`, we inspect the returned value,
-    // which is from an enum, and the value `1` corresponse to
-    // `complete, // Not cancelled and all tasks in group have completed`,
-    // in which case it means that we have reached the default case, so
-    // we print the message on console and exit from loop.
-    // `task_group` - https://software.intel.com/en-us/node/506287
-    // `enum task_group_status`, as returned value of `wait()` -
-    // 		https://software.intel.com/en-us/node/506289.
-    // enum task_group_status {
-    //     not_complete, // Not cancelled and not all tasks in group have completed.
-    //     complete,     // Not cancelled and all tasks in group have completed
-    //     canceled      // Task group received cancellation request
-    // };
-    if (tg.wait() == 1) {
-      std::cout << "Default case reached.\n";
-      break;
-    }
+class SelectInstruction {
+public:
+  SelectInstruction() {
   }
 
-  tg.wait();
-}
+  ~SelectInstruction() {
+  }
 
+  void execute(task_group& tg) {
+    while (true) {
+      if (trigger != 0) {
+        // A pop from a queue was encountered, aka
+        // an item from a channel was received,
+        // more precisely from the channel with index `trigger`,
+        // because of the `trigger.fetch_and_add(indexChannel)` call.
+        std::cout << "Received item from channel " << trigger << ".\n";
 
-/*
- * Put default trigger to 0, as untriggered.
- */
-void setTriggerToDefault() {
-  trigger = 0;
-}
+        // When an item is received, cancel all the other channels.
+        tg.cancel();
+        break;
+      }
+
+      // Handling the `default` case of `select`.
+      // When it finished all the tasks, including the costliest one
+      // represented by the `DefaultTimer()`, we inspect the returned value,
+      // which is from an enum, and the value `1` corresponse to
+      // `complete, // Not cancelled and all tasks in group have completed`,
+      // in which case it means that we have reached the default case, so
+      // we print the message on console and exit from loop.
+      // `task_group` - https://software.intel.com/en-us/node/506287
+      // `enum task_group_status`, as returned value of `wait()` -
+      //    https://software.intel.com/en-us/node/506289.
+      // enum task_group_status {
+      //     not_complete, // Not cancelled and not all tasks in group have completed.
+      //     complete,     // Not cancelled and all tasks in group have completed
+      //     canceled      // Task group received cancellation request
+      // };
+      if (tg.wait() == complete) {
+        std::cout << "Default case reached.\n";
+        break;
+      }
+    }
+
+    tg.wait();
+  }
+};
 
 
 void showExampleGeneral() {
   std::cout << "\n---------- Example - General behaviour ----------\n";
 
-  setTriggerToDefault();
-
   gQueues.clear();
   gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
+
+  // IMPORTANT
+  // We have to harcode this statement everytime in the injected code area, because this is the place where it works to be, 
+  // in order to have the desired behaviour. 
+  trigger = 0;
 
   task_group tg;
 
@@ -174,18 +178,19 @@ void showExampleGeneral() {
 
   tg.run(DefaultTimer(5));
 
-  runSelectInstruction(tg);
+
+  SelectInstruction selectInstruction;
+  selectInstruction.execute(tg);
 }
 
 
 void showExamplePopFromEmptyChannel() {
   std::cout << "\n---------- Example - pop() from empty channel ----------\n";
 
-  setTriggerToDefault();
-
   gQueues.clear();
   gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
 
+  trigger = 0;
   task_group tg;
 
   // queue indices starting with 1, to have effect the fetch_and_add(number)
@@ -203,7 +208,8 @@ void showExamplePopFromEmptyChannel() {
 
   tg.run(DefaultTimer(5));
 
-  runSelectInstruction(tg);
+  SelectInstruction selectInstruction;
+  selectInstruction.execute(tg);
 }
 
 /*
@@ -215,11 +221,10 @@ void showExampleDefaultCase(const int& numberOfSeconds = 5) {
   std::cout << "\n---------- Example - reaching default case after "
             << numberOfSeconds << " seconds ----------\n";
 
-  setTriggerToDefault();
-
   gQueues.clear();
   gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
 
+  trigger = 0;
   task_group tg;
 
   // queue indices starting with 1, to have effect the fetch_and_add(number)
@@ -231,18 +236,18 @@ void showExampleDefaultCase(const int& numberOfSeconds = 5) {
   // We haven't called any pop(), so the default case will be triggered.
   tg.run(DefaultTimer(numberOfSeconds));
 
-  runSelectInstruction(tg);
+  SelectInstruction selectInstruction;
+  selectInstruction.execute(tg);
 }
 
 
 void showExampleNotAValidChannel() {
   std::cout << "\n---------- Example - not a valid channel ----------\n";
 
-  setTriggerToDefault();
-
   gQueues.clear();
   gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
 
+  trigger = 0;
   task_group tg;
 
   // queue indices starting with 1, to have effect the fetch_and_add(number)
@@ -258,7 +263,8 @@ void showExampleNotAValidChannel() {
   // We haven't called any pop(), so the default case will be triggered.
   tg.run(DefaultTimer(5));
 
-  runSelectInstruction(tg);
+  SelectInstruction selectInstruction;
+  selectInstruction.execute(tg);
 }
 
 
