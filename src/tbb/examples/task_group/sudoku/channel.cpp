@@ -14,8 +14,50 @@
 
 using namespace tbb;
 
+template<class T>
+class GQueues {
+  std::vector<std::queue<T> > gQueues;
+public:
+  GQueues(int dimension = 20) {
+    gQueues.resize(20);
+  }
 
-std::vector<std::queue<int> > gQueues;
+  ~GQueues() {
+  }
+
+  bool push(const int& index, T content) {
+    if (!isValidIndex(index)) {
+      return false;
+    }
+    gQueues[index].push(content);
+    return true;
+  }
+
+  bool pop(const int& index) {
+    if (!isValidIndex(index)) {
+      return false;
+    }
+    if (gQueues[index].size() < 1) {
+      return false;
+    }
+    gQueues[index].pop();
+    return true;
+  }
+
+  int size() {
+    return gQueues.size();
+  }
+
+private:
+  bool isValidIndex(const int& index) {
+    if (index < 0 || index > gQueues.size() - 1) {
+      return false;
+    }
+    return true;
+  }
+};
+
+GQueues<int>* gQueues = nullptr;
 const unsigned int gKDefaultnumberOfChannels = 20;
 
 /*
@@ -37,13 +79,17 @@ int getRandom() {
 }
 
 
+template<class T>
 class Hello {
     std::string operation;
     const int kSecondsLimit;
 public:
     Hello(
-        std::string operation, const std::string& channelName, int content = 0
+        std::string operation, const std::string& channelName, T content
     ): kSecondsLimit(5) {
+      if (gQueues == nullptr) {
+        return;
+      }
       if (operation != "push" && operation != "pop") {
         std::cout << "Not a valid operation.\n";
         return;
@@ -60,16 +106,16 @@ public:
       }
 
       if (operation == "push") {
-        gQueues[indexChannel].push(content);
+        gQueues->push(indexChannel, content);
       }
 
       if (operation == "pop") {
-        if (gQueues[indexChannel].size() < 1) {
+        if (!gQueues->pop(indexChannel)) {
           std::cout << "Can't pop on empty channel " << channelName << ".\n";
           return;
         }
-        gQueues[indexChannel].pop();
-        // Trigger the behavior that a pop was encountered
+        // pop was successfull, so
+        // trigger the behavior that a pop was encountered
         trigger.fetch_and_add(indexChannel);
       }
 
@@ -86,7 +132,7 @@ public:
 
 private:
     bool isValidIndex(const int& indexChannel) {
-      return (indexChannel >= 0 && indexChannel < gQueues.size());
+      return (indexChannel >= 0 && indexChannel < gQueues->size());
     }
 };
 
@@ -184,30 +230,28 @@ void showExampleGeneral() {
   std::cout << "\n---------- Example - General behaviour ----------\n";
 
   // IMPORTANT
-  // We have to hardcode this statement everytime in the injected code area, because this is the place where it works to be, 
-  // in order to have the desired behaviour. 
+  // We have to hardcode this statement everytime in the injected code area, because this is the place where it works to be,
+  // in order to have the desired behaviour.
   setTriggerToDefault();
 
-  gQueues.clear();
-  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
-
+  gQueues = new GQueues<int>(gKDefaultnumberOfChannels);
   task_group tg;
 
   setHashTables();
 
   // queue indices starting with 1, to have effect the fetch_and_add(number)
-  tg.run(Hello("push", "channel1", 5));
-  tg.run(Hello("push", "channel1", 8));
-  tg.run(Hello("push", "channel2", 10));
-  tg.run(Hello("push", "channel3", 5));
+  tg.run(Hello<int>("push", "channel1", 5));
+  tg.run(Hello<int>("push", "channel1", 8));
+  tg.run(Hello<int>("push", "channel2", 10));
+  tg.run(Hello<int>("push", "channel3", 5));
 
   std::vector<std::string> channelNames = {"channel1", "channel2", "channel3"};
-  const std::string randomChannelName = channelNames[getRandom() % 3]; 
+  const std::string randomChannelName = channelNames[getRandom() % 3];
 
   std::cout << "Gonna pop from channel " << randomChannelName << ".\n";
   // This pop is hardcoded for the example, but it actually triggers
   // when the first pop is encountered.
-  tg.run(Hello("pop", randomChannelName));
+  tg.run(Hello<int>("pop", randomChannelName, 0));
 
   tg.run(DefaultTimer(5));
 
@@ -222,26 +266,23 @@ void showExamplePopFromEmptyChannel() {
 
   setTriggerToDefault();
 
-  gQueues.clear();
-  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
-
+  gQueues = new GQueues<int>();
   task_group tg;
-
 
   setHashTables();
   channelToIndex["channel4"] = 4;
   indexToChannel[4] = "channel4";
 
   // queue indices starting with 1, to have effect the fetch_and_add(number)
-  tg.run(Hello("push", "channel1", 5));
-  tg.run(Hello("push", "channel1", 8));
-  tg.run(Hello("push", "channel2", 10));
-  tg.run(Hello("push", "channel3", 5));
+  tg.run(Hello<int>("push", "channel1", 5));
+  tg.run(Hello<int>("push", "channel1", 8));
+  tg.run(Hello<int>("push", "channel2", 10));
+  tg.run(Hello<int>("push", "channel3", 5));
 
   std::cout << "Gonna pop from channel channel4.\n";
   // This pop is hardcoded for the example, but it actually triggers
   // when the first pop is encountered.
-  tg.run(Hello("pop", "channel4"));
+  tg.run(Hello<int>("pop", "channel4", 0));
 
   tg.run(DefaultTimer(5));
 
@@ -260,18 +301,16 @@ void showExampleDefaultCase(const int& numberOfSeconds = 5) {
 
   setTriggerToDefault();
 
-  gQueues.clear();
-  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
-
+  gQueues = new GQueues<int>();
   task_group tg;
 
   setHashTables();
 
   // queue indices starting with 1, to have effect the fetch_and_add(number)
-  tg.run(Hello("push", "channel1", 5));
-  tg.run(Hello("push", "channel1", 8));
-  tg.run(Hello("push", "channel2", 10));
-  tg.run(Hello("push", "channel3", 5));
+  tg.run(Hello<int>("push", "channel1", 5));
+  tg.run(Hello<int>("push", "channel1", 8));
+  tg.run(Hello<int>("push", "channel2", 10));
+  tg.run(Hello<int>("push", "channel3", 5));
 
   // We haven't called any pop(), so the default case will be triggered.
   tg.run(DefaultTimer(numberOfSeconds));
@@ -286,21 +325,19 @@ void showExampleNotAValidChannel() {
 
   setTriggerToDefault();
 
-  gQueues.clear();
-  gQueues.resize(gKDefaultnumberOfChannels); // TODO change this
-
+  gQueues = new GQueues<int>(20);
   task_group tg;
 
   setHashTables();
 
   // queue indices starting with 1, to have effect the fetch_and_add(number)
-  tg.run(Hello("push", "channel1", 5));
-  tg.run(Hello("push", "channel1", 8));
-  tg.run(Hello("push", "channel2", 10));
-  tg.run(Hello("push", "channel3", 5));
+  tg.run(Hello<int>("push", "channel1", 5));
+  tg.run(Hello<int>("push", "channel1", 8));
+  tg.run(Hello<int>("push", "channel2", 10));
+  tg.run(Hello<int>("push", "channel3", 5));
 
-  tg.run(Hello("push", "inexistentChannel1", 1));
-  tg.run(Hello("pop", "inexistentChannel2", 2));
+  tg.run(Hello<int>("push", "inexistentChannel1", 1));
+  tg.run(Hello<int>("pop", "inexistentChannel2", 2));
 
 
   // We haven't called any pop(), so the default case will be triggered.
