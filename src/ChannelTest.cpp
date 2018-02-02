@@ -3,6 +3,9 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <string>
+#include <random>
+#include <chrono>
 
 template <class T>
 class ChannelUnbounded {
@@ -85,22 +88,28 @@ public:
 
 ChannelUnbounded<std::string> myChannel;
 ChannelUnbounded<std::string> channel1, channel2;
+std::default_random_engine generator;
+std::uniform_int_distribution<int> distribution(0, 500);
 
+std::chrono::milliseconds getRandomMillisecondsTime()
+{
+    return std::chrono::milliseconds(distribution(generator));
+}
 
 class Example {
   public:
     void process(const int& id) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(getRandomMillisecondsTime());
         myChannel.write("message " + std::to_string(id));
     }
 
     void process1(const int& id) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(getRandomMillisecondsTime());
         channel1.write("message " + std::to_string(id));
     }
 
     void process2(const int& id) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(getRandomMillisecondsTime());
         channel2.write("message " + std::to_string(id));
     }
 };
@@ -141,13 +150,17 @@ void runSelectExample() {
     }
 }
 
-int main() {
+int main() 
+{
+    generator.seed((unsigned int)std::chrono::system_clock::now().time_since_epoch().count());
+
     std::string input;
 
     std::cout << "\n1. Select example. \n"
                    "2. Without Select. \n";
-    std::cin >> input;
-    if (input == "1") {
+   // std::cin >> input;
+    //if (input == "1") 
+    {
         runSelectExample();
         return 0;
     }
