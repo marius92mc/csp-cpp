@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a7dc820542a19192638c1b0182cfeb4c751f9108f3ae71af7f6c80d73b7a0d28"
+            "sha256": "aab8c1fb526c4dd50120c14cedebd76147d05e0b58809b394844d00a70f9d305"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -38,12 +38,25 @@
             "markers": "sys_platform == 'darwin'",
             "version": "==0.1.0"
         },
+        "colorful": {
+            "hashes": [
+                "sha256:4b27c3eafdd02c9e619bd5fc417604ba8d549aa7f7dd366e41a7e8cdc075e293",
+                "sha256:443c8aa36d889a81f6fb902099294ed9f2da4996bdc4ba02f1f5c73596c0ac9f"
+            ],
+            "version": "==0.4.1"
+        },
         "decorator": {
             "hashes": [
                 "sha256:94d1d8905f5010d74bbbd86c30471255661a14187c45f8d7f3e5aa8540fdb2e5",
                 "sha256:7d46dd9f3ea1cf5f06ee0e4e1277ae618cf48dfb10ada7c8427cd46c42702a0e"
             ],
             "version": "==4.2.1"
+        },
+        "ipdb": {
+            "hashes": [
+                "sha256:9ea256b4280fbe12840fb9dfc3ce498c6c6de03352eca293e4400b0dfbed2b28"
+            ],
+            "version": "==0.10.3"
         },
         "ipython": {
             "hashes": [
@@ -87,6 +100,13 @@
                 "sha256:84a9257227dfdd6fe1b4be1319096c20eb85ff1e82c7932f36efccfe1b09737b"
             ],
             "version": "==0.7.4"
+        },
+        "prettyprinter": {
+            "hashes": [
+                "sha256:f996155547e3b86178c4da2a96dbe8ffada9c55183bb58530a4739164180b896",
+                "sha256:8bf69e0c08fedef0ed1528b12f2801cc58bf0d21505d6fb7677a7b1f94daa573"
+            ],
+            "version": "==0.12.0"
         },
         "prompt-toolkit": {
             "hashes": [

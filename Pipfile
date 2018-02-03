@@ -8,6 +8,8 @@ verify_ssl = true
 [dev-packages]
 
 ipython = "*"
+ipdb = "*"
+prettyprinter = "*"
 
 
 [packages]
