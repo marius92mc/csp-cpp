@@ -1,0 +1,16 @@
+1. motivation
+Compare with mutex and other locks
+condition variables
+Intel TBB + higher sync methods in java/c#
+
+
+2. Tech desc
+-> don't forget that you communicate with both deep and shallow objects (poitners vs plain copy on channels)
+-> how is channel bound | unbound impl
+-> how is select working | debugging give access to generated source code
+
+
+3. Common examples 
+   Readers and writers, go problems solved easier and how we solved them in cpp
+   A game dev case
+

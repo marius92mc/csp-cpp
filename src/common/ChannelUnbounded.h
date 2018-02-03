@@ -1,27 +1,26 @@
 #pragma once
+#ifndef CHANNEL_UNBOUNDED_H
+#define CHANNEL_UNBOUNDED_H
 
-template <class T>
+
+// TODO: make this respect the size property
+template <class T, int MAXSIZE>
 class ChannelUnbounded 
 {
-    std::queue<T> queue;
-    std::mutex mutex;
-    std::condition_variable conditionalVariable;
-    bool closed;
+    BoundedBuffer<T,MAXSIZE> m_buffer;
+    bool m_isClosed;
 
 public:
     ChannelUnbounded() {
-        closed = false;
+        m_isClosed = false;
     }
 
     void close() {
-        std::unique_lock<std::mutex> lock(mutex);
-        closed = true;
-        conditionalVariable.notify_all();
+        m_isClosed = true;
     }
 
     bool isClosed() {
-        std::unique_lock<std::mutex> lock(mutex);
-        return closed;
+        return m_isClosed;
     }
 
     /**
@@ -30,13 +29,14 @@ public:
     * @param value
     *        The item that will be added to the channel.
     */
-    void write(const T& value) {
-        std::unique_lock<std::mutex> lock(mutex);
-        if (closed) {
+    bool write(const T& value, const bool wait = true) 
+    {
+        if (m_isClosed) {
             throw std::logic_error("Cannot write to a closed channel.\n");
         }
-        queue.push(value);
-        conditionalVariable.notify_one();
+        
+        const bool res = m_buffer.deposit(value, wait);
+        return res;
     }
 
     /**
@@ -57,24 +57,11 @@ public:
     *        `false`, if there was no item to read from the channel, i. e.
     *                 the channel was empty.
     */
-    bool read(T& value, bool wait = true) {
-        std::unique_lock<std::mutex> lock(mutex);
-
-        if (wait) {
-            conditionalVariable.wait(
-                lock,
-                [&]() {
-                return closed || (!queue.empty());
-            }
-            );
-        }
-
-        if (queue.empty()) {
-            return false;
-        }
-
-        value = queue.front();
-        queue.pop();
-        return true;
+    bool read(T* value, bool wait = true) 
+    {
+        const bool res = m_buffer.fetch(value, wait);
+        return res;
     }
 };
+
+#endif
