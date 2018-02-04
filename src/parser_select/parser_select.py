@@ -150,12 +150,17 @@ class SelectParser(object):
                 break
             if _is_closing_select(index):
                 break
-            if self._content[index].split() == [] or self._is_comment_line(index):
+            line: str = self._content[index]
+            if line.split() == [] or self._is_comment_line(index):
                 index += 1
                 continue
+            if self._CASE_KEYWORD not in line.split():
+                if self._DEFAULT_CASE_NAME + ":" not in line.split():
+                    index += 1
+                    continue
             # `case` area
-            receiver: str = _get_receiver(self._content[index])
-            sender: str = _get_sender(self._content[index])
+            receiver: str = _get_receiver(line)
+            sender: str = _get_sender(line)
             index, content = _get_content(index)
             case_content: self.CaseContent = (receiver, sender, content)
             select_data.append(case_content)
