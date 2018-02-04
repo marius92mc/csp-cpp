@@ -210,6 +210,7 @@ class OutputGenerator:
     _FILE_ENCODING: str = SelectParser.FILE_ENCODING
     _INDICES_CASE: IndicesCase = SelectParser.INDICES_CASE
     _DEFINE_PREFIX: str = "#define select_"
+    _MARK_LINE: str = "\\\n"
 
     @classmethod
     def _get_output_file(cls) -> typing.Optional[_io.TextIOWrapper]:
@@ -233,6 +234,10 @@ class OutputGenerator:
         return sender == SelectParser.DEFAULT_CASE_NAME and not receiver
 
     @classmethod
+    def _is_read_from_channel(cls, sender: str) -> bool:
+        return cls._is_channel(sender)
+
+    @classmethod
     def _write_define_header(cls,
                              output: _io.TextIOWrapper,
                              index: int,
@@ -244,14 +249,13 @@ class OutputGenerator:
         for case in select:
             receiver: str = case[cls._INDICES_CASE.receiver]
             sender: str = case[cls._INDICES_CASE.sender]
-            read_from_channel: bool = True if cls._is_channel(sender) else False
+            read_from_channel: bool = cls._is_read_from_channel(sender)
 
-            # TODO not ignore the corner cases of
-            # `default:` anymore.
+            # The default case is not appearing in the `define`'s header.
             if cls._is_default_case(case):
                 continue
             parameters.append(sender if read_from_channel else receiver)
-            parameters.append(str(read_from_channel))
+            parameters.append(str(read_from_channel).lower())
             parameters.append(receiver or "nullptr" if read_from_channel else sender)
         """ 
         parameters: 
@@ -261,7 +265,92 @@ class OutputGenerator:
          'channel_GuiSim', True,   None, 
           None,            False, 'default']
         """
-        output.write(f"({', '.join(parameters)})")
+        output.write(f"({', '.join(parameters)}) {cls._MARK_LINE}")
+
+    @classmethod
+    def _write_case_content(cls,
+                            output: _io.TextIOWrapper,
+                            case: SelectParser.CaseContent) -> None:
+        def _get_message(receiver: str, sender: str) -> str:
+            message: str = receiver if cls._is_channel(sender) else sender
+            return message if message else "nullptr"
+
+        def _get_processed_content(content: str) -> str:
+            """Add '\' before each '\n'."""
+            processed: str = ""
+            for entry in content:
+                if entry == '\n':
+                    processed += f' \{entry}'
+                else:
+                    processed += entry
+            return processed
+
+        receiver: str = case[cls._INDICES_CASE.receiver]
+        sender: str = case[cls._INDICES_CASE.sender]
+        content: str = case[cls._INDICES_CASE.content]
+
+        if cls._is_default_case(case):
+            # Last case, the `default` one.
+            #output.write(f"{cls._MARK_LINE}")
+            output.write(_get_processed_content(content))
+            #output.write("} " + cls._MARK_LINE)
+            return None
+
+        # if (readFromChannel1) \
+        output.write(f"if ({str(cls._is_read_from_channel(sender)).lower()}) {cls._MARK_LINE}")
+        output.write("{ " + cls._MARK_LINE)
+
+        # if (channel1.read(outVar1, false))
+        channel: str = sender if cls._is_channel(sender) else receiver
+        message: str = _get_message(receiver, sender)
+        if channel:
+            output.write(f"if ({channel}.read({message}, false)) {cls._MARK_LINE}")
+            output.write(_get_processed_content(content))
+            output.write("} " + cls._MARK_LINE)
+            output.write(f"else {cls._MARK_LINE}")
+
+            output.write("{ " + cls._MARK_LINE)
+            # if (channel1.write(*outVar1, false))
+            output.write(
+                f"if ({channel}.write({'*' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
+            )
+            output.write("{ " + cls._MARK_LINE)
+            output.write(f'printf("Succeeded to write on {channel}\\n"); {cls._MARK_LINE}')
+            output.write(f"break; {cls._MARK_LINE}")
+            output.write("} " + cls._MARK_LINE)
+            output.write("} " + cls._MARK_LINE)
+
+    @classmethod
+    def _select_has_default_case(cls, select: SelectParser.SelectContent) -> bool:
+        for case in select:
+            if cls._is_default_case(case):
+                return True
+        return False
+
+    @classmethod
+    def _write_select_content(cls,
+                              output: _io.TextIOWrapper,
+                              select: SelectParser.SelectContent) -> None:
+        output.write("{ " + cls._MARK_LINE)
+
+        # If it doesn't have a `default` case, then it is a blocking `select`, so we have `while` in `define`
+        output.write(
+            f"{'if' if cls._select_has_default_case(select) else 'while'} (true) {cls._MARK_LINE}"
+        )
+        output.write("{ " + cls._MARK_LINE)
+        for case in select:
+            cls._write_case_content(output, case)
+
+        output.write("} \\\n")  # /while
+        output.write("}\n")    # /define
+
+    @classmethod
+    def _write_select(cls,
+                      output: _io.TextIOWrapper,
+                      index: int,
+                      select: SelectParser.SelectContent) -> None:
+        cls._write_define_header(output, index, select)
+        cls._write_select_content(output, select)
 
     @classmethod
     def generate(cls, select_data: typing.List[SelectParser.SelectContent]) -> None:
@@ -270,14 +359,13 @@ class OutputGenerator:
         "channel" as substring.
         """
         output_file: _io.TextIOWrapper = cls._get_output_file()
-
         output_file.write(cls._FILE_HEADER)
-
 
         for index in range(len(select_data)):
             select: SelectParser.SelectContent = select_data[index]
-            cls._write_define_header(output_file, index, select)
+            cls._write_select(output_file, index, select)
 
+        output_file.write(cls._FILE_FOOTER)
         return None
 
 
