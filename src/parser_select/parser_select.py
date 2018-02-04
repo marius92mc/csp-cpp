@@ -25,7 +25,7 @@ class SelectParser(object):
     _SELECT_KEYWORD: str = "select"
     _CASE_KEYWORD: str = "case"
     _CASE_SEPARATOR: str = "<-"
-    _DEFAULT_CASE_NAME: str = "default"
+    DEFAULT_CASE_NAME: str = "default"
     _SEPARATORS_CODE_BLOCK = SeparatorsCodeBlock(open="{", close="}")
     INDICES_CASE = IndicesCase(receiver=0, sender=1, content=2)
     FILE_ENCODING: str = "utf-16-le"
@@ -79,7 +79,7 @@ class SelectParser(object):
         """
         # ----------------------------------------
         def _is_default_case(line: str) -> bool:
-            return line.split()[0] == self._DEFAULT_CASE_NAME + ":"
+            return line.split()[0] == self.DEFAULT_CASE_NAME + ":"
 
         def _get_receiver(line: str) -> typing.Optional[str]:
             if _is_default_case(line):
@@ -91,7 +91,7 @@ class SelectParser(object):
 
         def _get_sender(line: str) -> str:
             if _is_default_case(line):
-                return self._DEFAULT_CASE_NAME
+                return self.DEFAULT_CASE_NAME
             sender: str = line.split(self._CASE_KEYWORD)[1].split(
                 self._CASE_SEPARATOR
             )[self.INDICES_CASE.sender].split()[0]
@@ -154,7 +154,7 @@ class SelectParser(object):
                 index += 1
                 continue
             if self._CASE_KEYWORD not in line.split():
-                if self._DEFAULT_CASE_NAME + ":" not in line.split():
+                if self.DEFAULT_CASE_NAME + ":" not in line.split():
                     index += 1
                     continue
             # `case` area
@@ -240,12 +240,12 @@ class OutputGenerator:
             read_from_channel: bool = True if _is_channel(sender) else False
 
             # TODO not ignore the corner cases of
-            # ` <- channel_GuiSim` and `default:` anymore.
-            if not receiver or not sender:
+            # `default:` anymore.
+            if not receiver and sender == SelectParser.DEFAULT_CASE_NAME:
                 continue
             parameters.append(sender if read_from_channel else receiver)
             parameters.append(str(read_from_channel))
-            parameters.append(receiver if read_from_channel else sender)
+            parameters.append(receiver or "nullptr" if read_from_channel else sender)
         """ 
         parameters: 
         ['channel1',       True,  'message1', 
