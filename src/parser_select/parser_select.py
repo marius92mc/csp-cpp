@@ -39,10 +39,8 @@ class SelectParser(object):
     CaseContent = typing.Tuple[typing.Optional[str], str, str]
     SelectContent = typing.List[CaseContent]
 
-    def __init__(self, input_file_name: str, output_file_name: str) -> None:
+    def __init__(self, input_file_name: str) -> None:
         self._input_file_name: str = input_file_name
-        self._output_file_name: str = output_file_name
-        #self._case: typing.List[self.CaseContent] = []
         self._content: typing.List[str] = self._get_input_content()
 
     def _get_input_content(self) -> typing.List[str]:
@@ -192,7 +190,7 @@ class SelectParser(object):
 
 
 def main():
-    print(SelectParser("SelectTest.cpp", "").parse())
+    print(SelectParser("SelectTest.cpp").parse())
 
 
 if __name__ == "__main__":

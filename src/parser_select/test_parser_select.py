@@ -7,7 +7,7 @@ from .parser_select import SelectParser
 
 
 def test_general_case_overall() -> None:
-    parser = SelectParser("SelectTest.cpp", "")
+    parser = SelectParser("SelectTest.cpp")
     assert parser.parse() == [
         [
             (
@@ -65,7 +65,7 @@ def _add_content(tmpdir: local.LocalPath, content: str) -> local.LocalPath:
 
 def test_empty_content(tmpdir: local.LocalPath) -> None:
     _add_content(tmpdir, "#include <iostream>\n")
-    select_data = SelectParser(_get_file_path(tmpdir), "").parse()
+    select_data = SelectParser(_get_file_path(tmpdir)).parse()
     assert select_data == []
 
 
@@ -83,7 +83,7 @@ def test_empty_select(tmpdir: local.LocalPath, cpp_includes: str) -> None:
                          "  select {\n"
                          "  }\n"
                          "}\n")
-    select_data = SelectParser(_get_file_path(tmpdir), "").parse()
+    select_data = SelectParser(_get_file_path(tmpdir)).parse()
     assert select_data == [[]]
 
 
@@ -98,7 +98,7 @@ def test_select_with_one_case(tmpdir: local.LocalPath, cpp_includes: str) -> Non
                          '      }\n'
                          '  }\n'
                          '}\n')
-    select_data = SelectParser(_get_file_path(tmpdir), "").parse()
+    select_data = SelectParser(_get_file_path(tmpdir)).parse()
     assert select_data == [
         [
             (
@@ -124,7 +124,7 @@ def test_select_with_just_one_default(tmpdir: local.LocalPath, cpp_includes: str
                          '      }\n'
                          '  }\n'
                          '}\n')
-    select_data = SelectParser(_get_file_path(tmpdir), "").parse()
+    select_data = SelectParser(_get_file_path(tmpdir)).parse()
     assert select_data == [
         [
             (
