@@ -4,9 +4,10 @@ import typing
 import pytest
 
 from .parser_select import SelectParser
+from .parser_select import OutputGenerator
 
 
-def test_general_case_overall() -> None:
+def test_parser_select_general_case_overall() -> None:
     parser = SelectParser("SelectTest.cpp")
     assert parser.parse() == [
         [
@@ -137,3 +138,17 @@ def test_select_with_just_one_default(tmpdir: local.LocalPath, cpp_includes: str
             )
         ]
     ]
+
+
+def test_output_generator_general_case_overall() -> None:
+    parser = SelectParser("SelectTest.cpp")
+    select_data: typing.List[SelectParser.SelectContent] = parser.parse()
+    OutputGenerator.generate(select_data)
+
+    verified: bool = False
+    with open("TODO.h", "r", encoding="utf-16-le") as generated:
+        with open("TODO_ok.h", "r") as content:
+            assert generated.read() == content.read()
+            assert generated.readlines() == content.readlines()
+            verified = True
+    assert verified
