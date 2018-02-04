@@ -220,16 +220,23 @@ class OutputGenerator:
             raise CantCreateOutputFileError()
         return output_file
 
+    @staticmethod
+    def _is_channel(entry: str) -> bool:
+        # TODO for this moment we consider it to be a channel if it contains
+        # "channel" as its substring. For example purposes.
+        return entry.find("channel") != -1
+
+    @classmethod
+    def _is_default_case(cls, case: SelectParser.CaseContent) -> bool:
+        receiver: str = case[cls._INDICES_CASE.receiver]
+        sender: str = case[cls._INDICES_CASE.sender]
+        return sender == SelectParser.DEFAULT_CASE_NAME and not receiver
+
     @classmethod
     def _write_define_header(cls,
                              output: _io.TextIOWrapper,
                              index: int,
                              select: SelectParser.SelectContent) -> None:
-        def _is_channel(entry: str) -> bool:
-            # TODO for this moment we consider it to be a channel if it contains
-            # "channel" as its substring. For example purposes.
-            return entry.find("channel") != -1
-
         output.write(cls._DEFINE_PREFIX)
         output.write(str(index))
 
@@ -237,11 +244,11 @@ class OutputGenerator:
         for case in select:
             receiver: str = case[cls._INDICES_CASE.receiver]
             sender: str = case[cls._INDICES_CASE.sender]
-            read_from_channel: bool = True if _is_channel(sender) else False
+            read_from_channel: bool = True if cls._is_channel(sender) else False
 
             # TODO not ignore the corner cases of
             # `default:` anymore.
-            if not receiver and sender == SelectParser.DEFAULT_CASE_NAME:
+            if cls._is_default_case(case):
                 continue
             parameters.append(sender if read_from_channel else receiver)
             parameters.append(str(read_from_channel))
