@@ -366,6 +366,7 @@ class OutputGenerator:
             cls._write_select(output_file, index, select)
 
         output_file.write(cls._FILE_FOOTER)
+        output_file.close()
         return None
 
 
