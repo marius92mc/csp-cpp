@@ -1,9 +1,21 @@
-language: C++
-sudo: required 
+language: python
+python:
+  - "3.6.2"
 
-script: (cd src/tbb/; make); 
-        cd src/tbb/examples/task_group/sudoku 
-        c++ -std=c++11 -O2 -DNDEBUG -Wl,-rpath,../../../lib -o channel channel.cpp -ltbb
+os:
+  - linux
+
+env:
+  - PIPENV_IGNORE_VIRTUALENVS=1
+
+install:
+  - pip3 install pipenv
+  - cd src/parser_select
+  - pipenv install --dev
+
+script:
+  - pipenv run python parser_select.py
+  - pipenv run pytest -vv
 
 notifications:
     email: false
