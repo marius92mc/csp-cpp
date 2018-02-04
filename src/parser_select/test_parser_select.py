@@ -1,3 +1,4 @@
+from py._path import local
 import typing
 
 import pytest
@@ -37,3 +38,14 @@ def test_general_case_overall() -> None:
             )
         ]
     ]
+
+def test_tmpdir(tmpdir: local.LocalPath) -> None:
+    file_name: str = "hello.cpp"
+    file_content: str = "#include <iostream>"
+    p = tmpdir.join(file_name)
+    p.write(file_content)
+
+    assert tmpdir.join(file_name).isfile()
+    assert p.read() == file_content
+
+
