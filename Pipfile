@@ -1,0 +1,21 @@
+[[source]]
+
+name = "pypi"
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+
+[dev-packages]
+
+ipython = "*"
+ipdb = "*"
+prettyprinter = "*"
+
+
+[packages]
+
+
+
+[requires]
+
+python_version = "3.6"
