@@ -16,6 +16,8 @@ install:
 script:
   - pipenv run python parser_select.py
   - pipenv run pytest -vv
+  - cd ../common
+  # - make
 
 notifications:
     email: false
