@@ -215,7 +215,7 @@ class OutputGenerator:
     @classmethod
     def _get_output_file(cls) -> typing.Optional[_io.TextIOWrapper]:
         output_file: typing.Optional[_io.TextIOWrapper] = open(
-            cls._OUTPUT_FILE_NAME, "w", encoding=cls._FILE_ENCODING
+            cls._OUTPUT_FILE_NAME, "w"
         )
         if not output_file:
             raise CantCreateOutputFileError()
