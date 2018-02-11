@@ -8,14 +8,14 @@ if (true) \
 { \
 if (true) \
 { \
-if (channel1.read(message1, false)) \
+if (channel1.read(&message1, false)) \
         { \
             printf("1"); \
         }    \
 } \
 else \
 { \
-if (channel1.write(*message1, false)) \
+if (channel1.write(message1, false)) \
 { \
 printf("Succeeded to write on channel1\n"); \
 break; \
@@ -23,14 +23,14 @@ break; \
 } \
 if (true) \
 { \
-if (channel2.read(message2, false)) \
+if (channel2.read(&message2, false)) \
         { \
             printf("2"); \
         } \
 } \
 else \
 { \
-if (channel2.write(*message2, false)) \
+if (channel2.write(message2, false)) \
 { \
 printf("Succeeded to write on channel2\n"); \
 break; \
@@ -38,14 +38,14 @@ break; \
 } \
 if (false) \
 { \
-if (channel3.read(message3, false)) \
+if (channel3.read(&message3, false)) \
         { \
             printf("Succeeded to write on channel 3\n"); \
         } \
 } \
 else \
 { \
-if (channel3.write(*message3, false)) \
+if (channel3.write(message3, false)) \
 { \
 printf("Succeeded to write on channel3\n"); \
 break; \

@@ -153,7 +153,7 @@ class SelectParser(object):
             if line.split() == [] or self.is_comment_line(line):
                 index += 1
                 continue
-            if not self.has_channel_mark(line):
+            if not self.has_case_mark(line):
                 if self.DEFAULT_CASE_NAME + ":" not in line.split():
                     index += 1
                     continue
@@ -173,6 +173,10 @@ class SelectParser(object):
 
     @classmethod
     def has_channel_mark(cls, line: str) -> bool:
+        return cls._CASE_SEPARATOR in line.split()
+
+    @classmethod
+    def has_case_mark(cls, line: str) -> bool:
         return cls._CASE_KEYWORD in line.split()
 
     def parse(self) -> typing.List[SelectContent]:
@@ -312,7 +316,9 @@ class HeaderGenerator:
         channel: str = sender if cls._is_channel(sender) else receiver
         message: str = _get_message(receiver, sender)
         if channel:
-            output.write(f"if ({channel}.read({message}, false)) {cls._MARK_LINE}")
+            output.write(
+                f"if ({channel}.read({'&' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
+            )
             output.write(_get_processed_content(content))
             output.write("} " + cls._MARK_LINE)
             output.write(f"else {cls._MARK_LINE}")
@@ -320,7 +326,7 @@ class HeaderGenerator:
             output.write("{ " + cls._MARK_LINE)
             # if (channel1.write(*outVar1, false))
             output.write(
-                f"if ({channel}.write({'*' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
+                f"if ({channel}.write({'' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
             )
             output.write("{ " + cls._MARK_LINE)
             output.write(f'printf("Succeeded to write on {channel}\\n"); {cls._MARK_LINE}')
@@ -441,6 +447,18 @@ class CppGenerator:
                 return True
         return False
 
+    @classmethod
+    def _get_receiver(cls, line: str) -> str:
+        assert SelectParser.has_channel_mark(line)
+        return line.split(cls._CHANNEL_MARK)[0].split()[0]
+
+    @classmethod
+    def _get_sender(cls, line: str) -> str:
+        assert SelectParser.has_channel_mark(line)
+        component: str = line.split(cls._CHANNEL_MARK)[1].split()[0]
+        last_character = component[len(component) - 1]
+        return component if last_character != ";" else component[:len(component) - 1]
+
     def generate(self) -> None:
         with open(self._output_cpp_file_name, "w") as output:
             index: int = 0
@@ -462,9 +480,18 @@ class CppGenerator:
                     break
                 line: str = self._input_cpp_content[index]
                 if SelectParser.has_channel_mark(line):
+                    # `message1 <- channel1` or `channel1` <- `message1`
+                    receiver: str = self._get_receiver(line)
+                    sender: str = self._get_sender(line)
+                    if receiver.find("channel") != -1:
+                        # `channel1 <- message1` case
+                        output.write(f"{receiver}.write({sender}, false);\n")
+                    else:
+                        output.write(f"{sender}.read(&{receiver}, false);\n")
                     index += 1
                     continue
                 if SelectParser.contains_select_keyword(line):
+                    # `select`
                     output.write(self._defines[index_select])
                     index_select += 1
                     while not self._is_closing_select(index):
