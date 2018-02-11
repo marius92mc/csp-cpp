@@ -450,7 +450,8 @@ class CppGenerator:
     @classmethod
     def _get_receiver(cls, line: str) -> str:
         assert SelectParser.has_channel_mark(line)
-        return line.split(cls._CHANNEL_MARK)[0].split()[0]
+        components: typing.List[str] = line.split(cls._CHANNEL_MARK)[0].split()
+        return components[0] if components else "nullptr"
 
     @classmethod
     def _get_sender(cls, line: str) -> str:
@@ -487,7 +488,9 @@ class CppGenerator:
                         # `channel1 <- message1` case
                         output.write(f"{receiver}.write({sender}, false);\n")
                     else:
-                        output.write(f"{sender}.read(&{receiver}, false);\n")
+                        output.write(
+                            f"{sender}.read({'&' if receiver != 'nullptr' else ''}{receiver}, false);\n"
+                        )
                     index += 1
                     continue
                 if SelectParser.contains_select_keyword(line):
