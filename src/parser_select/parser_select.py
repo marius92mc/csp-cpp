@@ -42,20 +42,20 @@ class SelectParser(object):
 
     def __init__(self, input_file_name: str) -> None:
         self._input_file_name: str = input_file_name
-        self._content: typing.List[str] = self._get_input_content()
+        self._content: typing.List[str] = self.get_input_content(self._input_file_name)
 
-    def _get_input_content(self) -> typing.List[str]:
-        with open(self._input_file_name, "r", encoding=self.FILE_ENCODING) as input_file:
+    @classmethod
+    def get_input_content(cls, file_name: str) -> typing.List[str]:
+        with open(file_name, "r", encoding=cls.FILE_ENCODING) as input_file:
             return input_file.readlines()
 
     def _is_valid_index(self, index: int) -> bool:
         return index >= 0 and index < len(self._content)
 
-    def _is_comment_line(self, index: int) -> bool:
+    @staticmethod
+    def is_comment_line(line: str) -> bool:
         """Return True if it is a line starting with `//`, False otherwise."""
-        if not self._is_valid_index(index):
-            return False
-        components: typing.List[str] = self._content[index].split()
+        components: typing.List[str] = line.split()
         if not components:
             return False
         return components[0] == "//" or components[0] == "/*" or components[len(components) - 1] == "*/"
@@ -66,10 +66,24 @@ class SelectParser(object):
         if not self._is_valid_index(previous_index):
             return None
         while previous_index >= 0:
-            if not self._is_comment_line(previous_index) and self._content[previous_index] != "\n":
+            if not self.is_comment_line(self._content[previous_index]) and self._content[previous_index] != "\n":
                 return self._content[previous_index]
             previous_index = previous_index - 1
         return None
+
+    def is_closing_select(self, index) -> bool:
+        if not self._is_valid_index(index - 1):
+            return False
+        if not self._is_valid_index(index):
+            return False
+        previous_line: str = self._get_previous_important_line(index)
+        current_line: str = self._content[index]
+        if previous_line.split() == [] or current_line.split() == []:
+            return False
+        if previous_line.split()[0] == self._SEPARATORS_CODE_BLOCK.close:
+            if current_line.split()[0] == self._SEPARATORS_CODE_BLOCK.close:
+                return True
+        return False
 
     def _parse_select_block(self, index: int, select_data: SelectContent) -> int:
         """Return the index of the last line in the current `select` block.
@@ -97,20 +111,6 @@ class SelectParser(object):
             )[self.INDICES_CASE.sender].split()[0]
             # It has ":".
             return sender[:len(sender) - 1]
-
-        def _is_closing_select(index) -> bool:
-            if not self._is_valid_index(index - 1):
-                return False
-            if not self._is_valid_index(index):
-                return False
-            previous_line: str = self._get_previous_important_line(index)
-            current_line: str = self._content[index]
-            if previous_line.split() == [] or current_line.split() == []:
-                return False
-            if previous_line.split()[0] == self._SEPARATORS_CODE_BLOCK.close:
-                if current_line.split()[0] == self._SEPARATORS_CODE_BLOCK.close:
-                    return True
-            return False
 
         def _get_content(index: int) -> typing.Tuple[int, str]:
             """Return the index of the last line from the current `select`'s content and the actual content.
@@ -147,13 +147,13 @@ class SelectParser(object):
         while True:
             if not self._is_valid_index(index):
                 break
-            if _is_closing_select(index):
+            if self.is_closing_select(index):
                 break
             line: str = self._content[index]
-            if line.split() == [] or self._is_comment_line(index):
+            if line.split() == [] or self.is_comment_line(line):
                 index += 1
                 continue
-            if self._CASE_KEYWORD not in line.split():
+            if not self.has_case_mark(line):
                 if self.DEFAULT_CASE_NAME + ":" not in line.split():
                     index += 1
                     continue
@@ -167,6 +167,18 @@ class SelectParser(object):
 
         return index
 
+    @classmethod
+    def contains_select_keyword(cls, line: str) -> bool:
+        return cls.is_comment_line(line) == False and cls._SELECT_KEYWORD in line.split()
+
+    @classmethod
+    def has_channel_mark(cls, line: str) -> bool:
+        return cls._CASE_SEPARATOR in line.split()
+
+    @classmethod
+    def has_case_mark(cls, line: str) -> bool:
+        return cls._CASE_KEYWORD in line.split()
+
     def parse(self) -> typing.List[SelectContent]:
         """Return an array of `select` data."""
         index: int = 0
@@ -176,7 +188,7 @@ class SelectParser(object):
             if not self._is_valid_index(index):
                 break
             line: str = self._content[index]
-            if self._SELECT_KEYWORD not in line.split():
+            if not self.contains_select_keyword(line):
                 index += 1
                 continue
 
@@ -196,8 +208,8 @@ class CantCreateOutputFileError(Exception):
         super().__init__("Can't create output file.")
 
 
-class OutputGenerator:
-    _OUTPUT_FILE_NAME: str = "AUTOGENERATED.h"
+class HeaderGenerator:
+    OUTPUT_FILE_NAME: str = "AUTOGENERATED.h"
     _FILE_HEADER: str = "#pragma once\n" \
                        "#ifndef AUTOGENERATED_H\n" \
                        "#define AUTOGENERATED_H\n" \
@@ -215,7 +227,7 @@ class OutputGenerator:
     @classmethod
     def _get_output_file(cls) -> typing.Optional[_io.TextIOWrapper]:
         output_file: typing.Optional[_io.TextIOWrapper] = open(
-            cls._OUTPUT_FILE_NAME, "w"
+            cls.OUTPUT_FILE_NAME, "w"
         )
         if not output_file:
             raise CantCreateOutputFileError()
@@ -304,7 +316,9 @@ class OutputGenerator:
         channel: str = sender if cls._is_channel(sender) else receiver
         message: str = _get_message(receiver, sender)
         if channel:
-            output.write(f"if ({channel}.read({message}, false)) {cls._MARK_LINE}")
+            output.write(
+                f"if ({channel}.read({'&' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
+            )
             output.write(_get_processed_content(content))
             output.write("} " + cls._MARK_LINE)
             output.write(f"else {cls._MARK_LINE}")
@@ -312,7 +326,7 @@ class OutputGenerator:
             output.write("{ " + cls._MARK_LINE)
             # if (channel1.write(*outVar1, false))
             output.write(
-                f"if ({channel}.write({'*' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
+                f"if ({channel}.write({'' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
             )
             output.write("{ " + cls._MARK_LINE)
             output.write(f'printf("Succeeded to write on {channel}\\n"); {cls._MARK_LINE}')
@@ -370,11 +384,135 @@ class OutputGenerator:
         return None
 
 
-def main():
-    print(SelectParser("SelectTest.cpp").parse())
+class CppGenerator:
+    _SUFFIX_GENERATED: str = "_generated.cpp"
+    _HEADER: str = HeaderGenerator.OUTPUT_FILE_NAME
+    _HEADER_INCLUDE: str = f'#include "{_HEADER}"\n\n\n'
+    _CHANNEL_MARK: str = "<-"
+    _DEFINE_MARK: str = "#define"
 
-    select_data = SelectParser("SelectTest.cpp").parse()
-    OutputGenerator.generate(select_data)
+    def __init__(self, input_cpp_file_name: str) -> None:
+        self._input_cpp_file_name: str = input_cpp_file_name
+        self._output_cpp_file_name: str = self._get_output_file_name()
+        self._input_cpp_content: typing.List[str] = SelectParser.get_input_content(self._input_cpp_file_name)
+        self._defines: typing.List[str] = self._get_defines()
+
+    def _get_output_file_name(self) -> str:
+        return self._input_cpp_file_name.split(".cpp")[0] + self._SUFFIX_GENERATED
+
+    def _get_defines(self) -> typing.List[str]:
+        defines: typing.List[str] = []
+
+        def _is_select_line(line: str) -> bool:
+            if self._DEFINE_MARK not in line.split():
+                return False
+            if line.split("#define")[1].find("select_") != -1:
+                return True
+
+        def _get_select_macro(line: str) -> str:
+            return line.split("#define")[1][1:].split(" \\\n")[0] + ";"
+
+        with open(HeaderGenerator.OUTPUT_FILE_NAME, "r") as autogenerated:
+            for line in autogenerated.readlines():
+                if _is_select_line(line):
+                    defines.append(_get_select_macro(line))
+        return defines
+
+    def _is_valid_index(self, index: int) -> bool:
+        return 0 <= index and index < len(self._input_cpp_content)
+
+    def _get_previous_important_line(self, index: int) -> typing.Optional[str]:
+        """Return the previous line which doesn't contain a comment with '//' or a newline."""
+        previous_index: int = index - 1
+        if not self._is_valid_index(previous_index):
+            return None
+        while previous_index >= 0:
+            if not SelectParser.is_comment_line(self._input_cpp_content[previous_index]):
+                if self._input_cpp_content[previous_index] != "\n":
+                    return self._input_cpp_content[previous_index]
+            previous_index = previous_index - 1
+        return None
+
+    def _is_closing_select(self, index) -> bool:
+        if not self._is_valid_index(index - 1):
+            return False
+        if not self._is_valid_index(index):
+            return False
+        previous_line: str = self._get_previous_important_line(index)
+        current_line: str = self._input_cpp_content[index]
+        if previous_line.split() == [] or current_line.split() == []:
+            return False
+        if previous_line.split()[0] == '}':
+            if current_line.split()[0] == '}':
+                return True
+        return False
+
+    @classmethod
+    def _get_receiver(cls, line: str) -> str:
+        assert SelectParser.has_channel_mark(line)
+        components: typing.List[str] = line.split(cls._CHANNEL_MARK)[0].split()
+        return components[0] if components else "nullptr"
+
+    @classmethod
+    def _get_sender(cls, line: str) -> str:
+        assert SelectParser.has_channel_mark(line)
+        component: str = line.split(cls._CHANNEL_MARK)[1].split()[0]
+        last_character = component[len(component) - 1]
+        return component if last_character != ";" else component[:len(component) - 1]
+
+    def generate(self) -> None:
+        with open(self._output_cpp_file_name, "w") as output:
+            index: int = 0
+            index_select: int = 0
+
+            while True:
+                if not self._is_valid_index(index):
+                    break
+                line: str = self._input_cpp_content[index]
+                if line.find("#include") == -1 and line != '\n':
+                    break
+                output.write(line)
+                index += 1
+
+            output.write(self._HEADER_INCLUDE)
+
+            while True:
+                if not self._is_valid_index(index):
+                    break
+                line: str = self._input_cpp_content[index]
+                if SelectParser.has_channel_mark(line):
+                    # `message1 <- channel1` or `channel1` <- `message1`
+                    receiver: str = self._get_receiver(line)
+                    sender: str = self._get_sender(line)
+                    if receiver.find("channel") != -1:
+                        # `channel1 <- message1` case
+                        output.write(f"{receiver}.write({sender}, false);\n")
+                    else:
+                        output.write(
+                            f"{sender}.read({'&' if receiver != 'nullptr' else ''}{receiver}, false);\n"
+                        )
+                    index += 1
+                    continue
+                if SelectParser.contains_select_keyword(line):
+                    # `select`
+                    output.write(self._defines[index_select])
+                    index_select += 1
+                    while not self._is_closing_select(index):
+                        index += 1
+                    index += 1
+                    continue
+                output.write(self._input_cpp_content[index])
+                index += 1
+
+
+def main():
+    input_cpp_file_name: str = "SelectTest.cpp"
+    #print(SelectParser("SelectTest.cpp").parse())
+
+    select_data: typing.List[SelectParser.SelectContent] = SelectParser(input_cpp_file_name).parse()
+    HeaderGenerator.generate(select_data)
+
+    CppGenerator(input_cpp_file_name).generate()
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@
     {  \
         if (readFromChannel1)   \
         {   \
-            if (channel1.read(outVar1, false))  \
+            if (channel1.read(&outVar1, false))  \
             {   \
                 printf("1\n"); \
                 break;  \
@@ -27,7 +27,7 @@
         } \
         if (readFromChannel2) \
         { \
-            if (channel2.read(outVar2, false)) \
+            if (channel2.read(&outVar2, false)) \
             { \
                 printf("2\n");\
                 break; \
@@ -39,7 +39,7 @@
         } \
         if (readFromGuiChannel) \
         { \
-            if (guiChannel.read(outGuiChannel, false)) \
+            if (guiChannel.read(&outGuiChannel, false)) \
             { \
                 printf("GUI\n"); \
                 break; \
@@ -55,7 +55,7 @@
         } \
         else \
         { \
-            if (channel3.write(*outVar3, false)) \
+            if (channel3.write(outVar3, false)) \
             { \
                 printf("Succeeded to write on channel 3\n"); \
                 break; \
