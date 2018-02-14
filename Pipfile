@@ -10,6 +10,7 @@ verify_ssl = true
 ipython = "*"
 ipdb = "*"
 prettyprinter = "*"
+pytest = "*"
 
 
 [packages]
