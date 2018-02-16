@@ -259,8 +259,8 @@ class HeaderGenerator:
 
         parameters: typing.List[str] = []
         for case in select:
-            receiver: str = case[cls._INDICES_CASE.receiver]
-            sender: str = case[cls._INDICES_CASE.sender]
+            receiver: str = case[cls._INDICES_CASE.receiver] if case[cls._INDICES_CASE.receiver] else "nullptr"
+            sender: str = case[cls._INDICES_CASE.sender] if case[cls._INDICES_CASE.sender] else "nullptr"
             read_from_channel: bool = cls._is_read_from_channel(sender)
 
             # The default case is not appearing in the `define`'s header.
