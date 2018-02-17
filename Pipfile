@@ -11,6 +11,7 @@ ipython = "*"
 ipdb = "*"
 prettyprinter = "*"
 pytest = "*"
+click = "*"
 
 
 [packages]
