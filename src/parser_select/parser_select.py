@@ -1,6 +1,8 @@
 import _io
 import typing
 
+import click
+
 
 class IndicesCase(typing.NamedTuple):
     receiver: int
@@ -504,7 +506,7 @@ class CppGenerator:
                 output.write(self._input_cpp_content[index])
                 index += 1
 
-
+"""
 def main():
     input_cpp_file_name: str = "SelectTest.cpp"
     #print(SelectParser("SelectTest.cpp").parse())
@@ -513,6 +515,19 @@ def main():
     HeaderGenerator.generate(select_data)
 
     CppGenerator(input_cpp_file_name).generate()
+"""
+
+
+@click.command("Run parser")
+@click.argument("cpp_file_name")
+def command_line(cpp_file_name: str) -> None:
+    select_data: typing.List[SelectParser.SelectContent] = SelectParser(cpp_file_name).parse()
+    HeaderGenerator.generate(select_data)
+    CppGenerator(cpp_file_name).generate()
+
+
+def main():
+    command_line()
 
 
 if __name__ == "__main__":
