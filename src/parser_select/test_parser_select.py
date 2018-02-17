@@ -1,9 +1,13 @@
+import os
 from py._path import local
 import typing
 
+from click.testing import CliRunner
+from click.testing import Result
 import pytest
 
 from .parser_select import CppGenerator, SelectParser, HeaderGenerator
+from .parser_select import command_line
 from .conftest import gobyexample
 
 def test_parser_select_general_case_overall() -> None:
@@ -198,3 +202,23 @@ def test_cpp_generator_channel_outside_select_case_write(tmpdir: local.LocalPath
         verified = True
     assert verified
 
+
+def test_command_line_raises_when_missing_content() -> None:
+    result: Result = CliRunner().invoke(command_line, [])
+    assert result.exit_code != 0
+
+
+def _file_exists(file_name: str) -> bool:
+    return os.path.exists(os.path.join(os.getcwd(), file_name))
+
+
+def test_command_line_creates_output_files() -> None:
+    input_file_name: str = "SelectTest.cpp"
+    output_file_name: str = "SelectTest_generated.cpp"
+
+    os.remove(HeaderGenerator.OUTPUT_FILE_NAME)
+    os.remove(output_file_name)
+    result: Result = CliRunner().invoke(command_line, [input_file_name])
+    assert result.exit_code == 0
+    assert _file_exists(HeaderGenerator.OUTPUT_FILE_NAME), f"{HeaderGenerator.OUTPUT_FILE_NAME} was not generated."
+    assert _file_exists(output_file_name), f"{output_file_name} was not generated."
