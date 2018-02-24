@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "bd3e51dd456f2d8d921e94e8b15927757350ee758c9c21a0c6089b89cd856329"
+            "sha256": "2d3e6c844522edfdca3b7901658ed0b451cc2af3181e846ee6febc3cc3933c14"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -28,7 +28,15 @@
             }
         ]
     },
-    "default": {},
+    "default": {
+        "click": {
+            "hashes": [
+                "sha256:29f99fc6125fbc931b758dc053b3114e55c77a6e4c6c3a2674a2dc986016381d",
+                "sha256:f15516df478d5a56180fbf80e68f206010e6d160fc39fa508b65e035fd75130b"
+            ],
+            "version": "==6.7"
+        }
+    },
     "develop": {
         "appnope": {
             "hashes": [
@@ -44,13 +52,6 @@
                 "sha256:1c7960ccfd6a005cd9f7ba884e6316b5e430a3f1a6c37c5f87d8b43f83b54ec9"
             ],
             "version": "==17.4.0"
-        },
-        "click": {
-            "hashes": [
-                "sha256:29f99fc6125fbc931b758dc053b3114e55c77a6e4c6c3a2674a2dc986016381d",
-                "sha256:f15516df478d5a56180fbf80e68f206010e6d160fc39fa508b65e035fd75130b"
-            ],
-            "version": "==6.7"
         },
         "colorful": {
             "hashes": [
@@ -159,10 +160,10 @@
         },
         "pytest": {
             "hashes": [
-                "sha256:95fa025cd6deb5d937e04e368a00552332b58cae23f63b76c8c540ff1733ab6d",
-                "sha256:6074ea3b9c999bd6d0df5fa9d12dd95ccd23550df2a582f5f5b848331d2e82ca"
+                "sha256:8970e25181e15ab14ae895599a0a0e0ade7d1f1c4c8ca1072ce16f25526a184d",
+                "sha256:9ddcb879c8cc859d2540204b5399011f842e5e8823674bf429f70ada281b3cc6"
             ],
-            "version": "==3.4.0"
+            "version": "==3.4.1"
         },
         "simplegeneric": {
             "hashes": [
