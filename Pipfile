@@ -11,11 +11,11 @@ ipython = "*"
 ipdb = "*"
 prettyprinter = "*"
 pytest = "*"
-click = "*"
 
 
 [packages]
 
+click = "*"
 
 
 [requires]
