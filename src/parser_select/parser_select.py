@@ -321,7 +321,10 @@ class HeaderGenerator:
             output.write(
                 f"if ({channel}.read({'&' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
             )
+            output.write("{ " + cls._MARK_LINE)
             output.write(_get_processed_content(content))
+            output.write("break;" + cls._MARK_LINE)
+            output.write("} " + cls._MARK_LINE)
             output.write("} " + cls._MARK_LINE)
             output.write(f"else {cls._MARK_LINE}")
 
@@ -331,8 +334,8 @@ class HeaderGenerator:
                 f"if ({channel}.write({'' if message != 'nullptr' else ''}{message}, false)) {cls._MARK_LINE}"
             )
             output.write("{ " + cls._MARK_LINE)
-            output.write(f'printf("Succeeded to write on {channel}\\n"); {cls._MARK_LINE}')
-            output.write(f"break; {cls._MARK_LINE}")
+            output.write(_get_processed_content(content))
+            output.write("break;" + cls._MARK_LINE)
             output.write("} " + cls._MARK_LINE)
             output.write("} " + cls._MARK_LINE)
 

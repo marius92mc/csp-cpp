@@ -9,61 +9,81 @@ if (true) \
 if (true) \
 { \
 if (channel1.read(&message1, false)) \
+{ \
         { \
             printf("1"); \
         }    \
+break;\
+} \
 } \
 else \
 { \
 if (channel1.write(message1, false)) \
 { \
-printf("Succeeded to write on channel1\n"); \
-break; \
+        { \
+            printf("1"); \
+        }    \
+break;\
 } \
 } \
 if (true) \
 { \
 if (channel2.read(&message2, false)) \
+{ \
         { \
             printf("2"); \
         } \
+break;\
+} \
 } \
 else \
 { \
 if (channel2.write(message2, false)) \
 { \
-printf("Succeeded to write on channel2\n"); \
-break; \
+        { \
+            printf("2"); \
+        } \
+break;\
 } \
 } \
 if (false) \
 { \
 if (channel3.read(&message3, false)) \
+{ \
         { \
             printf("Succeeded to write on channel 3\n"); \
         } \
+break;\
+} \
 } \
 else \
 { \
 if (channel3.write(message3, false)) \
 { \
-printf("Succeeded to write on channel3\n"); \
-break; \
+        { \
+            printf("Succeeded to write on channel 3\n"); \
+        } \
+break;\
 } \
 } \
 if (true) \
 { \
 if (channel_GuiSim.read(nullptr, false)) \
+{ \
         { \
             printf("Gui"); \
         } \
+break;\
+} \
 } \
 else \
 { \
 if (channel_GuiSim.write(nullptr, false)) \
 { \
-printf("Succeeded to write on channel_GuiSim\n"); \
-break; \
+        { \
+            printf("Gui"); \
+        } \
+break;\
 } \
 } \
         { \
