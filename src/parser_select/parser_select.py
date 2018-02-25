@@ -338,6 +338,14 @@ class HeaderGenerator:
             output.write("break;" + cls._MARK_LINE)
             output.write("} " + cls._MARK_LINE)
             output.write("} " + cls._MARK_LINE)
+        else:
+            # We have a function call on the sender
+            output.write("} " + cls._MARK_LINE)
+            output.write(f"else {cls._MARK_LINE}")
+            output.write("{" + cls._MARK_LINE)
+            output.write(f"{sender};{cls._MARK_LINE}")
+            output.write(_get_processed_content(content))
+            output.write("}" + cls._MARK_LINE)
 
     @classmethod
     def _select_has_default_case(cls, select: SelectParser.SelectContent) -> bool:
